@@ -23,7 +23,8 @@ class BaseAPI(object):
     _session = None
     _timeout = (30, 300)
 
-    def __init__(self, host, port=443, ssl_verify=False, scheme='https', log=False, timeout=None):
+    def __init__(self, host, port=443, ssl_verify=False, scheme='https',
+                 log=False, timeout=None):
         '''BaseAPI Initialization'''
         self._session = requests.Session()
         self._host = host
@@ -48,7 +49,8 @@ class BaseAPI(object):
         self._session = requests.Session()
 
     def _url(self, path):
-        return '%s://%s:%s/%s%s' % (self._scheme, self._host, self._port, self._pre, path)
+        return '%s://%s:%s/%s%s' % (self._scheme, self._host, self._port,
+                                    self._pre, path)
 
     def _builder(self, **kwargs):
         if 'headers' not in kwargs:

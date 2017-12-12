@@ -1,4 +1,4 @@
-from .base import BaseAPI, APIError, logging
+from .base import BaseAPI, APIError
 
 
 class Nessus(BaseAPI):
@@ -6,9 +6,11 @@ class Nessus(BaseAPI):
     _secret = None
     managed = False
     enterprise = False
-    def __init__(self, host, port=8834, ssl_verify=False, scheme='https', log=False, timeout=None):
+
+    def __init__(self, host, port=8834, ssl_verify=False, scheme='https',
+                 log=False, timeout=None):
         BaseAPI.__init__(self, host, port, ssl_verify, scheme, log, timeout)
-        #try:
+
         d = self.get('server/properties').json()
         try:
             if 'managed' in d:
@@ -26,14 +28,16 @@ class Nessus(BaseAPI):
     def _builder(self, **kwargs):
         kwargs = BaseAPI._builder(self, **kwargs)
         if self._access and self._secret:
-            kwargs['headers']['X-APIKeys'] = 'accessKey=%s; secretKey=%s' % (self._access, self._secret)
+            kwargs['headers']['X-APIKeys'] = ('accessKey=%s; secretKey=%s'
+                                              % (self._access, self._secret))
         elif self._token:
             kwargs['headers']['X-Cookie'] = 'token=%s' % self._token
         return kwargs
 
     def login(self, username=None, password=None, access=None, secret=None):
         if username and password:
-            resp = self.post('session', json={'username': username, 'password': password})
+            resp = self.post('session',
+                             json={'username': username, 'password': password})
             if resp.status_code == 200:
                 self._token = resp.json()['token']
             else:
@@ -43,5 +47,3 @@ class Nessus(BaseAPI):
             self._secret = secret
         else:
             raise APIError(404, 'No Authentication Methods Found')
-
-

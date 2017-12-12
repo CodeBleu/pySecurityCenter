@@ -1,12 +1,16 @@
 from datetime import date, datetime, timedelta
-import random, calendar, json, sys
+import random
+import calendar
+import json
+import sys
 from zipfile import ZipFile
 from .base import APIError, BaseAPI
 
-if sys.version_info > (3,0):
+if sys.version_info > (3, 0):
     from io import StringIO
 else:
     from StringIO import StringIO
+
 
 class SecurityCenter4(BaseAPI):
     '''
@@ -33,7 +37,8 @@ class SecurityCenter4(BaseAPI):
               'SSA',
               ]
 
-    def __init__(self, host, port=443, ssl_verify=False, scheme='https', log=False, timeout=None):
+    def __init__(self, host, port=443, ssl_verify=False, scheme='https',
+                 log=False, timeout=None):
         BaseAPI.__init__(self, host, port, ssl_verify, scheme, log, timeout)
         self.system = self._system()
         self.version = self.system['version']
@@ -96,7 +101,7 @@ class SecurityCenter4(BaseAPI):
         if self._token:
             kwargs['data']['token'] = self._token
 
-        # Then the module, action, and input fields as required from the API. 
+        # Then the module, action, and input fields as required from the API.
         if 'module' in kwargs:
             kwargs['data']['module'] = kwargs['module']
             del kwargs['module']
@@ -107,7 +112,7 @@ class SecurityCenter4(BaseAPI):
             # The input data must be dumped as a string value in order to
             # be correctly interpreted.
             kwargs['data']['input'] = json.dumps(kwargs['input'])
-            del kwargs['input']     
+            del kwargs['input']
         return kwargs
 
     def raw_query(self, module, action, data=None, dejson=True, **kwargs):
@@ -119,7 +124,8 @@ class SecurityCenter4(BaseAPI):
         data = self.post('', **kwargs)
         if dejson:
             if data.json()['error_code']:
-                raise APIError(data.json()['error_code'], data.json()['error_msg'])
+                raise APIError(data.json()['error_code'],
+                               data.json()['error_msg'])
             return data.json()['response']
         else:
             return data
@@ -161,10 +167,15 @@ class SecurityCenter4(BaseAPI):
 
         """
 
-        data = []       # This is the list that we will be returning back to
-                        # the calling function once we complete.
-        payload = {}    # The dataset that we will be sending to the API via the
-                        # raw_query function.
+        # This is the list that we will be returning back to
+        # the calling function once we complete.
+
+        data = []
+
+        # The dataset that we will be sending to the API via the
+        # raw_query function.
+
+        payload = {}
 
         # A simple data dictionary to determine the module that we will be used
         stype = {
@@ -177,7 +188,8 @@ class SecurityCenter4(BaseAPI):
 
         # When the source is "individual", scan and directory should be provided
         # as well, and will be set in the payload.
-        if source == "individual" and scan is not None and directory is not None:
+        if source == ("individual" and scan is not None
+                      and directory is not None):
             # convert directory passed as datetime to string if necessary
             if isinstance(directory, date):
                 directory = directory.strftime("%Y-%m-%d")
@@ -215,17 +227,24 @@ class SecurityCenter4(BaseAPI):
         # Now that we have everything we need, a quick sanity check first to
         # make sure some idiot didn't give us a completely empty filterset to
         # work with.  If they did for some reason, just return an empty list.
-        #if len(filters) < 1:
+        # if len(filters) < 1:
         #    return []
 
         # Everything is set, checks out, and is ready to go.  Now we have to
         # start running through the query loop and actually pull everything
         # together.  We know that we will
-        items = []      # This is the resultset.  It'll be different every time
-                        # we loop.  to get things going however, we will just
-                        # set it to an empty list.
-        count = 0       # A simple counter to track the total number of results
-                        # that have been returned.
+
+        # This is the resultset.  It'll be different every time
+        # we loop.  to get things going however, we will just
+        # set it to an empty list.
+
+        items = []
+
+        # A simple counter to track the total number of results
+        # that have been returned.
+
+        count = 0
+
         while len(items) == req_size or count == 0:
             # The API requires that we set an offset for the start and end of
             # the request, so we will add these to the payload here.
@@ -263,7 +282,7 @@ class SecurityCenter4(BaseAPI):
         queries.
         """
         data = self.raw_query('auth', 'login',
-                             data={'username': user, 'password': passwd})
+                              data={'username': user, 'password': passwd})
         self._token = data["token"]
         self._user = data
 
@@ -318,7 +337,6 @@ class SecurityCenter4(BaseAPI):
                 if asset['type'] == 'dnsname':
                     payload['definedDNSNames'] = asset['definedDNSNames']
 
-
         # New we need to check to see if we actually got to pre-load the
         # payload.  If we didnt, then there isn an existing Asset list and we
         # should error out.
@@ -344,12 +362,14 @@ class SecurityCenter4(BaseAPI):
             for user in users:
                 ulist.append({'id': int(user)})
             payload['users'] = ulist
-        if payload['type'] == 'dynamic' and rules is not None and isinstance(rules, list):
+        if payload['type'] == ('dynamic' and rules is not None
+                               and isinstance(rules, list)):
             payload['rules'] = rules
-        if payload['type'] == 'static' and ips is not None and isinstance(ips, list):
+        if payload['type'] == ('static' and ips is not None
+                               and isinstance(ips, list)):
             payload['definedIPs'] = ','.join(ips)
-        if payload['type'] == 'dnsname' and dns is not None\
-                                        and isinstance(dns, list):
+        if payload['type'] == ('dnsname' and dns is not None
+                               and isinstance(dns, list)):
             payload['definedDNSNames'] = ','.join(dns)
 
         # And now that we have everything defined, we can go ahead and send
@@ -401,7 +421,8 @@ class SecurityCenter4(BaseAPI):
                     payload['username'] = cred['username']
                     payload['publickey'] = cred['publickey']
                     payload['privatekey'] = cred['privatekey']
-                    payload['priviledgeEscalation'] = cred['priviledgeEscalation']
+                    payload['priviledgeEscalation'] = (
+                        cred['priviledgeEscalation'])
                     payload['escalationUsername'] = cred['escalationUsername']
 
                 if cred['type'] == 'windows':
@@ -520,9 +541,11 @@ class SecurityCenter4(BaseAPI):
         '''
 
         if 'pirvateKey' in options:
-            options['privateKey'] = self._upload(options['privateKey'])['filename']
+            options['privateKey'] = (
+                self._upload(options['privateKey'])['filename'])
         if 'publicKey' in options:
-            options['publicKey'] = self._upload(options['publicKey'])['filename']
+            options['publicKey'] = (
+                self._upload(options['publicKey'])['filename'])
 
         return self.raw_query("credential", "add", data=options)
 
@@ -567,7 +590,8 @@ class SecurityCenter4(BaseAPI):
         })
 
     def plugins(self, plugin_type='all', sort='id', direction='asc',
-                size=1000, offset=0, all=True, loops=0, since=None, **filterset):
+                size=1000, offset=0, all=True, loops=0, since=None,
+                **filterset):
         """plugins
         Returns a list of of the plugins and their associated families.  For
         simplicity purposes, the plugin family names will be injected into the
@@ -614,14 +638,14 @@ class SecurityCenter4(BaseAPI):
             # Instance up and running to test...
             # ---
             # Next we convert the family dictionary list into a flat dictionary.
-            #fams = {}
-            #for famitem in data['families']:
+            # fams = {}
+            # for famitem in data['families']:
             #    fams[famitem['id']] = famitem['name']
 
             # Then we parse thtrough the data set, adding in the family name
             # into the plugin definition before adding it into the plugins list.
             for plugin in data['plugins']:
-            #    plugin['familyName'] = fams[plugin['familyID']]
+                # plugin['familyName'] = fams[plugin['familyID']]
                 plugins.append(plugin)
             # ---
 
@@ -776,17 +800,18 @@ class SecurityCenter4(BaseAPI):
             'downloadType': format,
             'scanResultID': scan_id,
         }
-        data = self.raw_query('scanResult', 'download', data=payload, dejson=False)
+        data = self.raw_query('scanResult', 'download', data=payload,
+                              dejson=False)
         bobj = StringIO()
         bobj.write(data)
         zfile = ZipFile(bobj)
         return zfile.read(zfile.namelist()[0])
 
-    ### WARNING ###
+    # ### WARNING ###
     # All of the functions below are not part of the API documentation.  This
     # means that it is entirely possible for one or all of these to change
     # without notification as they are not part of the documented API.
-    ###############
+    # ##############
 
     def _upload(self, fileobj):
         """_upload filename
@@ -795,8 +820,9 @@ class SecurityCenter4(BaseAPI):
 
         UN-DOCUMENTED CALL: This function is not considered stable.
         """
-        return self.raw_query('file', 'upload', 
-            data={'returnContent': 'false'}, files={'Filedata': fileobj})
+        return self.raw_query('file', 'upload',
+                              data={'returnContent': 'false'},
+                              files={'Filedata': fileobj})
 
     def dashboard_import(self, name, fileobj):
         """dashboard_import Dashboard_Name, filename
@@ -822,7 +848,6 @@ class SecurityCenter4(BaseAPI):
             'name': name,
         })
 
-
     def download_repository(self, repo_id):
         '''download_repository Repository_Id
         Download the tarball of the repository id specified.
@@ -832,7 +857,6 @@ class SecurityCenter4(BaseAPI):
         return self.raw_query('repository', 'export', data={
             'id': repo_id
         }, dejson=False)
-
 
     def asset_create(self, name, items, tag='', description='', atype='static'):
         '''asset_create_static name, ips, tags, description
@@ -861,7 +885,6 @@ class SecurityCenter4(BaseAPI):
             data['type'] = 'dnsname'
             data['definedDNSNames'] = ' '.join(items)
         return self.raw_query('asset', 'add', data=data)
-
 
     def asset_create_combo(self, name, combo, tag='', description=''):
         '''asset_create_combo name, combination, tag, description
@@ -903,7 +926,6 @@ class SecurityCenter4(BaseAPI):
             'combinations': combo,
         })
 
-
     def risk_rule(self, rule_type, rule_value, port, proto, plugin_id,
                   repo_ids, comment='', expires='-1', severity=None):
         '''accept_risk rule_type, rule_value, port, proto, plugin_id, comment
@@ -943,10 +965,10 @@ class SecurityCenter4(BaseAPI):
             data['expires'] = expires
             return self.raw_query('acceptRiskRule', 'add', data=data)
         else:
-            sevlevels = {'info': 0, 'low': 1, 'medium': 2, 'high': 3, 'critical': 4}
+            sevlevels = {'info': 0, 'low': 1, 'medium': 2, 'high': 3,
+                         'critical': 4}
             data['severity'] = sevlevels[severity]
             return self.raw_query('recastRiskRule', 'add', data=data)
-
 
     def group_add(self, name, restrict, repos, lces=[], assets=[], queries=[],
                   policies=[], dashboards=[], credentials=[], description=''):

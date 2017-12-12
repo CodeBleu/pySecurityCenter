@@ -1,8 +1,9 @@
-from .base import BaseAPI, APIError, logging
+from .base import BaseAPI, APIError
 
 
 class PVS(BaseAPI):
-    def __init__(self, host, port=8835, ssl_verify=False, scheme='https', log=False, timeout=None):
+    def __init__(self, host, port=8835, ssl_verify=False, scheme='https',
+                 log=False, timeout=None):
         BaseAPI.__init__(self, host, port, ssl_verify, scheme, log, timeout)
 
     def _builder(self, **kwargs):
@@ -10,11 +11,8 @@ class PVS(BaseAPI):
         return kwargs
 
     def login(self, username, password):
-        resp = self.post('login', data={
-                'login': username,
-                'password': password,
-                'json': 1,
-        })
+        resp = self.post('login', data={'login': username,
+                                        'password': password, 'json': 1})
         if resp.status_code == 200:
             self._token = resp.json()['reply']['contents']['token']
         else:
